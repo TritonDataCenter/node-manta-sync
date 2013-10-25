@@ -1,0 +1,19 @@
+{
+  "name": "manta-sync",
+  "version": "0.0.0",
+  "description": "Rsync style command for Joyent's Manta",
+  "author": "Dave Eddy <dave@daveeddy.com> (http://www.daveeddy.com)",
+  "repository": "git://github.com/bahamas10/node-manta-sync.git",
+  "license": "MIT",
+  "preferGlobal": true,
+  "bin": {
+    "manta-sync": "./manta-sync.js"
+  },
+  "dependencies": {
+    "posix-getopt": "~1.0.0",
+    "findit": "~1.1.0",
+    "manta": "git://github.com/joyent/node-manta.git",
+    "latest": "~0.1.2",
+    "async": "~0.2.9"
+  }
+}
