@@ -168,7 +168,7 @@ all directories that are needed are created lazily (which may result in more tha
 1 `PUT` per file).
 
 If `-n` or `--dry-run` is supplied, this step is skipped  by just printing
-what actions would have been taking.  Note that during a dry-run, `HEAD` requests
+what actions would have been taken.  Note that during a dry-run, `HEAD` requests
 are still made.
 
 ### 4. Print statistics, clean up
