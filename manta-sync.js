@@ -123,9 +123,7 @@ finder.on('end', function() {
   console.log('local file list built, %d files found\n', localfiles.length);
   if (!localfiles.length)
     return done();
-  localfiles.forEach(function(localfile) {
-    infoqueue.push(localfile, function() {});
-  });
+  infoqueue.push(localfiles, function() {});
 });
 
 // 2. Process each local file, figure out if we need to put
@@ -217,15 +215,15 @@ function processfile(d, cb) {
   });
 }
 
+var putsstarted;
 infoqueue.drain = function() {
   processed = 0;
   console.log('\nupload list built, %d files staged for uploading\n',
       filestoput.length);
   if (!filestoput.length)
     return done();
-  filestoput.forEach(function(filetoput) {
-    putqueue.push(filetoput, function() {});
-  });
+  putqueue.push(filestoput, function() {});
+  putsstarted = Date.now();
 };
 
 // 3. Upload each file that needs to be uploaded, lazily handling
@@ -283,7 +281,7 @@ function done() {
       console.error(error);
     });
   }
-  console.log('\ndone');
+  console.log('\ndone.  puts took %d ms', (Date.now() - putsstarted) || 0);
   client.close();
   process.exit(ret);
 }
