@@ -153,7 +153,7 @@ function processfile(d, cb) {
         filestoput.push(d);
       } else {
         var s = util.format('%s... unknown error: %s (%d/%d)',
-            d.mantafile, err.code, processed, localfiles.length);
+            d.mantafile, err.code || err.message, processed, localfiles.length);
         console.error(s);
         errors.push(s);
       }
@@ -252,7 +252,7 @@ function putfile(d, cb) {
       processed++;
       if (err) {
         var s = util.format('%s... error uploading: %s (%d/%d)',
-          d.mantafile, err.code, processed, filestoput.length);
+          d.mantafile, err.code || err.message, processed, filestoput.length);
         console.error(s);
         errors.push(s);
         filesnotput++;
