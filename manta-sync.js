@@ -230,6 +230,7 @@ infoqueue.drain = function() {
 // directory creation
 var filesput = 0;
 var filesnotput = 0;
+var bytesput = 0;
 function putfile(d, cb) {
   if (opts.dryrun) {
     console.log('%s... uploaded (dryrun)', d.mantafile);
@@ -259,6 +260,7 @@ function putfile(d, cb) {
         console.log('%s... uploaded (%d/%d)',
           d.mantafile, processed, filestoput.length);
         filesput++;
+        bytesput += d.stat.size;
       }
       cb();
     });
@@ -266,8 +268,8 @@ function putfile(d, cb) {
 }
 
 putqueue.drain = function() {
-  console.log('\n%d files put successfully, %d files failed to put',
-      filesput, filesnotput);
+  console.log('\n%d files (%d bytes) put successfully, %d files failed to put',
+      filesput, bytesput, filesnotput);
   done();
 };
 
@@ -281,7 +283,11 @@ function done() {
       console.error(error);
     });
   }
-  console.log('\ndone.  puts took %d ms', (Date.now() - putsstarted) || 0);
+  console.log();
+  if (filesput)
+    console.log('done.  puts took %d ms', (Date.now() - putsstarted) || 0);
+  else
+    console.log('done');
   client.close();
   process.exit(ret);
 }
