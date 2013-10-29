@@ -36,6 +36,7 @@ function usage() {
     '',
     'options',
     '  -c, --concurrency <num>   max number of parallel HEAD\'s or PUT\'s to do, defaults to ' + opts.concurrency,
+    '  -d, --delete              delete files on the remote end not found locally, defaults to ' + opts.delete,
     '  -h, --help                print this message and exit',
     '  -m, --md5                 use md5 instead of file size (slower, but more accurate)',
     '  -n, --dry-run             do everything except PUT any files',
@@ -47,6 +48,7 @@ function usage() {
 // command line arguments
 var options = [
   'c:(concurrency)',
+  'd(delete)',
   'h(help)',
   'm(md5)',
   'n(dry-run)',
@@ -57,6 +59,7 @@ var parser = new getopt.BasicParser(options, process.argv);
 
 var opts = {
   concurrency: 30,
+  delete: false,
   dryrun: false,
   md5: false
 };
@@ -64,6 +67,7 @@ var option;
 while ((option = parser.getopt()) !== undefined) {
   switch (option.option) {
     case 'c': opts.concurrency = +option.optarg; break;
+    case 'd': opts.delete = true; break;
     case 'm': opts.md5 = true; break;
     case 'h': console.log(usage()); process.exit(0);
     case 'n': opts.dryrun = true; break;
@@ -111,12 +115,24 @@ if (opts.dryrun)
   console.log('== dryrun ==');
 console.log('building local file list...');
 var localfiles = [];
-var infoqueue = async.queue(processfile, opts.concurrency);
 finder.on('file', function(file, stat) {
   if (file.indexOf(localdir) !== 0)
     return console.error('error processing %s', file);
 
-  localfiles.push({file: file, stat: stat});
+  /**
+   * $ manta-sync ./foo ~~/stor/foo
+   * d.file = /home/dave/foo/file.txt (absolute path)
+   * d.stat = [Stat object]
+   * d.basefile = file.txt
+   * d.mantafile = ~~/store/foo/file.txt
+   */
+  var d = {
+    file: file,
+    stat: stat,
+    basefile: file.substr(localdir.length)
+  };
+  d.mantafile = path.join(remotedir, d.basefile);
+  localfiles.push(d);
 });
 
 finder.on('end', function() {
@@ -131,19 +147,8 @@ finder.on('end', function() {
 var processed = 0;
 var filestoput = [];
 var errors = [];
-var putqueue = async.queue(putfile, opts.concurrency);
+var infoqueue = async.queue(processfile, opts.concurrency);
 function processfile(d, cb) {
-  /**
-   * $ manta-sync ./foo ~~/stor/foo
-   * d.file = /home/dave/foo/file.txt (absolute path)
-   * d.stat = [Stat object]
-   * d.basefile = file.txt
-   * d.mantafile = ~~/store/foo/file.txt
-   */
-
-  d.basefile = d.file.substr(localdir.length);
-  d.mantafile = path.join(remotedir, d.basefile);
-
   client.info(d.mantafile, function(err, info) {
     if (err) {
       processed++;
@@ -215,19 +220,25 @@ function processfile(d, cb) {
   });
 }
 
-var putsstarted;
 infoqueue.drain = function() {
   processed = 0;
   console.log('\nupload list built, %d files staged for uploading\n',
       filestoput.length);
-  if (!filestoput.length)
-    return done();
+  if (!filestoput.length) {
+    if (opts.delete)
+      dodelete();
+    else
+      done();
+    return;
+  }
   putqueue.push(filestoput, function() {});
   putsstarted = Date.now();
 };
 
 // 3. Upload each file that needs to be uploaded, lazily handling
 // directory creation
+var putqueue = async.queue(putfile, opts.concurrency);
+var putsstarted;
 var filesput = 0;
 var filesnotput = 0;
 var bytesput = 0;
@@ -268,12 +279,82 @@ function putfile(d, cb) {
 }
 
 putqueue.drain = function() {
-  console.log('\n%d files (%d bytes) put successfully, %d files failed to put',
-      filesput, bytesput, filesnotput);
+  processed = 0;
+  console.log('\n%d files (%d bytes) put successfully, %d files failed to put (took %dms)',
+      filesput, bytesput, filesnotput, (Date.now() - putsstarted) || 0);
+  if (opts.delete)
+    dodelete();
+  else
+    done();
+};
+
+// 4. Find all remote files, and delete those that are referenced locally
+var deletequeue = async.queue(deletefile, opts.concurrency);
+var filesdeleted = 0;
+var filesnotdeleted = 0;
+var remotefilestodelete = [];
+var deletesstarted;
+function dodelete() {
+  console.log('\nbuilding remote file list for deletion...');
+  client.ftw(remotedir, {parallel: opts.concurrency}, function(err, res) {
+    if (err) {
+      var e = util.format('error listing remote files: %s', err.code || err.message);
+      console.error(e + '\n');
+      errors.push(e);
+      done();
+      return;
+    }
+    res.on('entry', function(d) {
+      if (d.type !== 'object')
+        return;
+      d.mantafile = path.join(d.parent, d.name).replace('/' + process.env.MANTA_USER, '~~');
+
+      var results = localfiles.filter(function(localfile) {
+        return localfile.mantafile === d.mantafile;
+      });
+
+      if (!results.length)
+        remotefilestodelete.push(d);
+    });
+    res.on('end', function() {
+      console.log('remote file list built, %d files found\n', remotefilestodelete.length);
+      if (!remotefilestodelete.length)
+        return done();
+      deletequeue.push(remotefilestodelete, function() {});
+      deletesstarted = Date.now();
+    });
+  });
+}
+
+function deletefile(d, cb) {
+  if (opts.dryrun) {
+    console.log('%s... deleted (dryrun)', d.mantafile);
+    return cb();
+  }
+  client.unlink(d.mantafile, function(err) {
+    processed++;
+    if (err) {
+      var s = util.format('%s... error deleting: %s (%d/%d)',
+        d.mantafile, err.code, processed, remotefilestodelete.length);
+      console.error(s);
+      errors.push(s);
+      filesnotdeleted++;
+    } else {
+      console.log('%s... deleted (%d/%d)',
+        d.mantafile, processed, remotefilestodelete.length);
+      filesdeleted++;
+    }
+    cb();
+  });
+}
+
+deletequeue.drain = function() {
+  console.log('\n%d files deleted successfully, %d files failed to delete (took %dms)',
+      filesdeleted, filesnotdeleted, (Date.now() - deletesstarted) || 0);
   done();
 };
 
-// 4. Done
+// 5. Done
 function done() {
   var ret = 0;
   if (errors.length) {
@@ -283,11 +364,23 @@ function done() {
       console.error(error);
     });
   }
-  console.log();
-  if (filesput)
-    console.log('done.  puts took %d ms', (Date.now() - putsstarted) || 0);
-  else
-    console.log('done');
+  console.log('\ndone');
   client.close();
   process.exit(ret);
 }
+
+// Signals
+process.on('SIGUSR1', function() {
+  if (infoqueue.length) {
+    console.log('%d put tasks waiting to complete', infoqueue.tasks.length);
+    infoqueue.tasks.forEach(function(task) {
+      console.log(task.data);
+    });
+  }
+  if (putqueue.length) {
+    console.log('%d put tasks waiting to complete', putqueue.tasks.length);
+    putqueue.tasks.forEach(function(task) {
+      console.log(task.data);
+    });
+  }
+});
