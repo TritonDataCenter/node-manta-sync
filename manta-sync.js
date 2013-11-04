@@ -38,6 +38,7 @@ function usage() {
     '  -c, --concurrency <num>   max number of parallel HEAD\'s or PUT\'s to do, defaults to ' + opts.concurrency,
     '  -d, --delete              delete files on the remote end not found locally, defaults to ' + opts.delete,
     '  -h, --help                print this message and exit',
+    '  -j, --just-delete         don\'t send local files to the remote end, just delete hanging remote files',
     '  -m, --md5                 use md5 instead of file size (slower, but more accurate)',
     '  -n, --dry-run             do everything except PUT any files',
     '  -u, --updates             check for available updates on npm',
@@ -50,6 +51,7 @@ var options = [
   'c:(concurrency)',
   'd(delete)',
   'h(help)',
+  'j(just-delete)',
   'm(md5)',
   'n(dry-run)',
   'u(updates)',
@@ -61,15 +63,17 @@ var opts = {
   concurrency: 30,
   delete: false,
   dryrun: false,
-  md5: false
+  md5: false,
+  justdelete: false,
 };
 var option;
 while ((option = parser.getopt()) !== undefined) {
   switch (option.option) {
     case 'c': opts.concurrency = +option.optarg; break;
     case 'd': opts.delete = true; break;
-    case 'm': opts.md5 = true; break;
     case 'h': console.log(usage()); process.exit(0);
+    case 'j': opts.justdelete = true; break;
+    case 'm': opts.md5 = true; break;
     case 'n': opts.dryrun = true; break;
     case 'u': // check for updates
       require('latest').checkupdate(package, function(ret, msg) {
@@ -91,7 +95,7 @@ if (args.length !== 2) {
 if (!process.env.MANTA_KEY_ID ||
     !process.env.MANTA_USER   ||
     !process.env.MANTA_URL) {
-  console.error('environmental variables MANTA_USER, MANTA_URL, and MANTA_KEY_ID must be set');
+  console.error('[error] environmental variables MANTA_USER, MANTA_URL, and MANTA_KEY_ID must be set');
   console.error(usage());
   process.exit(1);
 }
@@ -139,6 +143,8 @@ finder.on('end', function() {
   console.log('local file list built, %d files found\n', localfiles.length);
   if (!localfiles.length)
     return done();
+  else if (opts.justdelete)
+    return dodelete();
   infoqueue.push(localfiles, function() {});
 });
 
@@ -299,7 +305,7 @@ function dodelete() {
   client.ftw(remotedir, {parallel: opts.concurrency}, function(err, res) {
     if (err) {
       var e = util.format('error listing remote files: %s', err.code || err.message);
-      console.error(e + '\n');
+      console.error('%s\n', e);
       errors.push(e);
       done();
       return;
