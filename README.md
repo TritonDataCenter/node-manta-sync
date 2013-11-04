@@ -142,7 +142,7 @@ the file.
 How
 ---
 
-`manta-sync` works in 4 stages
+`manta-sync` works in 4 (optionally 5) stages
 
 ### 1. Find all local files
 
@@ -173,7 +173,13 @@ If `-n` or `--dry-run` is supplied, this step is skipped  by just printing
 what actions would have been taken.  Note that during a dry-run, `HEAD` requests
 are still made.
 
-### 4. Print statistics, clean up
+### 4. (optional) Delete files found on the remote end not found locally
+
+If `--delete` is supplied, a walk of the remote file tree is done and compared
+against the list of local files from step 1.  Every file found on the remote
+end that is not referenced locally is deleted.
+
+### 5. Print statistics, clean up
 
 `manta-sync` prints how many files were uploaded, and how many (if any) files failed
 to upload.  Also, any errors that were encountered are displayed again at the bottom of
