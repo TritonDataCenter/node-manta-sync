@@ -35,7 +35,9 @@ tools, it requires `MANTA_USER`, `MANTA_URL` and `MANTA_KEY_ID` be set.
 
     options
       -c, --concurrency <num>   max number of parallel HEAD's or PUT's to do, defaults to 30
+      -d, --delete              delete files on the remote end not found locally, defaults to false
       -h, --help                print this message and exit
+      -j, --just-delete         don't send local files to the remote end, just delete hanging remote files
       -m, --md5                 use md5 instead of file size (slower, but more accurate)
       -n, --dry-run             do everything except PUT any files
       -u, --updates             check for available updates on npm
