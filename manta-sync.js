@@ -146,6 +146,7 @@ finder.on('end', function() {
   else if (opts.justdelete)
     return dodelete();
   infoqueue.push(localfiles, function() {});
+  headstarted = Date.now();
 });
 
 // 2. Process each local file, figure out if we need to put
@@ -153,6 +154,7 @@ finder.on('end', function() {
 var processed = 0;
 var filestoput = [];
 var errors = [];
+var headstarted;
 var infoqueue = async.queue(processfile, opts.concurrency);
 function processfile(d, cb) {
   client.info(d.mantafile, function(err, info) {
@@ -228,8 +230,8 @@ function processfile(d, cb) {
 
 infoqueue.drain = function() {
   processed = 0;
-  console.log('\nupload list built, %d files staged for uploading\n',
-      filestoput.length);
+  console.log('\nupload list built, %d files staged for uploading (took %dms)\n',
+      filestoput.length, (Date.now() - headstarted) || 0);
   if (!filestoput.length) {
     if (opts.delete)
       dodelete();
