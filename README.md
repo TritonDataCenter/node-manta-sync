@@ -189,7 +189,6 @@ Possible Future Features
 ------------------------
 
 - Remote => Local sync
-- identify files on the remote end not found on the local end (and unlink them)
 - count number of `HEAD` and `PUT` requests done (for billing purposes)
 
 License
