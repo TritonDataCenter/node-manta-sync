@@ -380,19 +380,19 @@ process.on('SIGUSR1', function() {
   if (infoqueue.length) {
     console.log('%d info tasks waiting to complete', infoqueue.tasks.length);
     infoqueue.tasks.forEach(function(task) {
-      console.log(task.data);
+      console.log(task.data.mantafile);
     });
   }
   if (putqueue.length) {
     console.log('%d put tasks waiting to complete', putqueue.tasks.length);
     putqueue.tasks.forEach(function(task) {
-      console.log(task.data);
+      console.log(task.data.mantafile);
     });
   }
   if (deletequeue.length) {
     console.log('%d delete tasks waiting to complete', deletequeue.tasks.length);
     deletequeue.tasks.forEach(function(task) {
-      console.log(task.data);
+      console.log(task.data.mantafile);
     });
   }
 });
