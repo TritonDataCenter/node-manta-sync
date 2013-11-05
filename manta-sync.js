@@ -95,7 +95,12 @@ if (args.length !== 2) {
 if (!process.env.MANTA_KEY_ID ||
     !process.env.MANTA_USER   ||
     !process.env.MANTA_URL) {
-  console.error('[error] environmental variables MANTA_USER, MANTA_URL, and MANTA_KEY_ID must be set');
+  console.error('[error] environmental variables MANTA_USER, MANTA_URL, and MANTA_KEY_ID must be set\n');
+  console.error(usage());
+  process.exit(1);
+}
+if (!process.env.SSH_AUTH_SOCK) {
+  console.error('[error] currently, only ssh-agent authentication is supported\n');
   console.error(usage());
   process.exit(1);
 }
