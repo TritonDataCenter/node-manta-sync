@@ -21,7 +21,11 @@ All remote directories will be lazily created for you if they do not exist,
 relying on the latest `manta` node module for this behavior.
 
 `manta-sync` has slightly different usage than the standard node manta
-tools, it requires `MANTA_USER`, `MANTA_URL` and `MANTA_KEY_ID` be set.
+tools, it requires `MANTA_USER`, `MANTA_URL` and `MANTA_KEY_ID` be set, and that
+`ssh-agent` authentication be used.
+
+**NOTE:** This is subject to change... Eventually I would like this script
+to follow the same usage patterns as the command line tools found in `node-manta`.
 
     usage: manta-sync [options] localdir ~~/remotedir
 
