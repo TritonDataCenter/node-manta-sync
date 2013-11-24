@@ -138,8 +138,6 @@ finder.on('file', function(file, stat) {
 
 finder.on('end', function() {
   console.log('local file list built, %d files found\n', localFound);
-  if (!localFound)
-    return done();
   cuttle()
 });
 
