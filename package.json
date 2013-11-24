@@ -10,10 +10,12 @@
     "manta-sync": "./manta-sync.js"
   },
   "dependencies": {
-    "posix-getopt": "~1.0.0",
     "findit": "~1.1.0",
     "latest": "~0.1.2",
     "async": "~0.2.9",
-    "manta": "~1.2.2"
+    "manta": "~1.2.2",
+    "cuttlefish": "~1.2.0",
+    "dashdash": "git://github.com/isaacs/node-dashdash",
+    "manta-client": "~1.0.4"
   }
 }
