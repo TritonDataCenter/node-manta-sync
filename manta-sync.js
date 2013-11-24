@@ -14,9 +14,45 @@ var util = require('util');
 
 var async = require('async');
 var findit = require('findit');
-var getopt = require('posix-getopt');
 var manta = require('manta');
 var cuttlefish = require('cuttlefish');
+var createClient = require('manta-client');
+var dashdash = require('dashdash');
+
+var parser = dashdash.createParser({
+  options: manta.DEFAULT_CLI_OPTIONS.concat([
+    { names: [ 'concurrency', 'c' ],
+      type: 'number',
+      helpArg: 'NUM',
+      default: 30,
+      help: 'Max number of parallel actions' },
+    { names: [ 'delete', 'd' ],
+      type: 'bool',
+      default: false,
+      help: 'Delete extra files found on remote end' },
+    { names: [ 'just-delete', 'j' ],
+      type: 'bool',
+      default: false,
+      help: 'Only delete, do not send any files' },
+    { names: [ 'md5', 'm' ],
+      type: 'bool',
+      default: false,
+      help: 'Compare md5 checksums' },
+    { names: [ 'dry-run', 'n' ],
+      type: 'bool',
+      default: false,
+      help: 'Perform no remote write operations' },
+    { names: [ 'updates' ],
+      type: 'bool',
+      default: false,
+      help: 'Check for available updates on npm' },
+    { names: [ 'version' ],
+      type: 'bool',
+      default: false,
+      help: 'Print the version number and exit' }
+  ])
+});
+
 
 var package = require('./package.json');
 
@@ -35,87 +71,26 @@ function usage() {
     '    -- same as above, but just HEAD the data, don\'t PUT or DELETE',
     '',
     'options',
-    '  -c, --concurrency <num>   max number of parallel HEAD\'s or PUT\'s to do, defaults to ' + opts.concurrency,
-    '  -d, --delete              delete files on the remote end not found locally, defaults to ' + opts.delete,
-    '  -h, --help                print this message and exit',
-    '  -j, --just-delete         don\'t send local files to the remote end, just delete hanging remote files',
-    '  -m, --md5                 use md5 instead of file size (slower, but more accurate)',
-    '  -n, --dry-run             do everything except PUT any files',
-    '  -u, --updates             check for available updates on npm',
-    '  -v, --version             print the version number and exit'
+    parser.help()
   ].join('\n');
 }
 
-// command line arguments
-var options = [
-  'c:(concurrency)',
-  'd(delete)',
-  'h(help)',
-  'j(just-delete)',
-  'm(md5)',
-  'n(dry-run)',
-  'u(updates)',
-  'v(version)'
-].join('');
-var parser = new getopt.BasicParser(options, process.argv);
+var opts = parser.parse({ argv: process.argv, env: process.env });
 
-var opts = {
-  concurrency: 30,
-  delete: false,
-  dryrun: false,
-  md5: false,
-  justdelete: false,
-};
-var option;
-while ((option = parser.getopt()) !== undefined) {
-  switch (option.option) {
-    case 'c': opts.concurrency = +option.optarg; break;
-    case 'd': opts.delete = true; break;
-    case 'h': console.log(usage()); process.exit(0);
-    case 'j': opts.justdelete = true; break;
-    case 'm': opts.md5 = true; break;
-    case 'n': opts.dryrun = true; break;
-    case 'u': // check for updates
-      require('latest').checkupdate(package, function(ret, msg) {
-        console.log(msg);
-        process.exit(ret);
-      });
-      return;
-    case 'v': console.log(package.version); process.exit(0);
-    default: console.error(usage()); process.exit(1); break;
-  }
-}
-var args = process.argv.slice(parser.optind());
+if (opts.help)
+  return console.log(usage());
+
+var args = opts._args
 
 if (args.length !== 2) {
   console.error('[error] must supply exactly 2 operands\n');
   console.error(usage());
   process.exit(1);
 }
-if (!process.env.MANTA_KEY_ID ||
-    !process.env.MANTA_USER   ||
-    !process.env.MANTA_URL) {
-  console.error('[error] environmental variables MANTA_USER, MANTA_URL, and MANTA_KEY_ID must be set\n');
-  console.error(usage());
-  process.exit(1);
-}
-if (!process.env.SSH_AUTH_SOCK) {
-  console.error('[error] currently, only ssh-agent authentication is supported\n');
-  console.error(usage());
-  process.exit(1);
-}
-
-var localdir = path.resolve(args[0]);
+var localdir = args[0];
 var remotedir = args[1];
 
-var client = manta.createClient({
-  sign: manta.sshAgentSigner({
-    keyId: process.env.MANTA_KEY_ID,
-    user: process.env.MANTA_USER
-  }),
-  user: process.env.MANTA_USER,
-  url: process.env.MANTA_URL
-});
+var client = createClient(process.argv, process.env);
 
 var finder = findit(localdir);
 
