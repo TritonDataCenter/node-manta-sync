@@ -20,6 +20,17 @@ var manta = require('manta');
 // XXX https://github.com/joyent/node-manta/issues/139
 var EMPTY_MD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 
+// XXX https://github.com/bahamas10/node-manta-sync/issues/3
+function nexttick(cb) {
+  return function _nexttick() {
+    var self = this;
+    var args = arguments;
+    process.nextTick(function _cb() {
+      cb.apply(self, args);
+    });
+  };
+}
+
 var package = require('./package.json');
 
 function usage() {
@@ -162,6 +173,7 @@ var errors = [];
 var headstarted;
 var infoqueue = async.queue(processfile, opts.concurrency);
 function processfile(d, cb) {
+  cb = nexttick(cb);
   client.info(d.mantafile, function(err, info) {
     if (err) {
       processed++;
@@ -256,6 +268,7 @@ var filesput = 0;
 var filesnotput = 0;
 var bytesput = 0;
 function putfile(d, cb) {
+  cb = nexttick(cb);
   if (opts.dryrun) {
     console.log('%s... uploaded (dryrun)', d.mantafile);
     return cb();
@@ -340,6 +353,7 @@ function dodelete() {
 }
 
 function deletefile(d, cb) {
+  cb = nexttick(cb);
   if (opts.dryrun) {
     console.log('%s... deleted (dryrun)', d.mantafile);
     return cb();
