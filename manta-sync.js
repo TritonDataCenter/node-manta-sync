@@ -110,17 +110,12 @@ if (!process.env.MANTA_KEY_ID ||
   console.error(usage());
   process.exit(1);
 }
-if (!process.env.SSH_AUTH_SOCK) {
-  console.error('[error] currently, only ssh-agent authentication is supported\n');
-  console.error(usage());
-  process.exit(1);
-}
 
 var localdir = path.resolve(args[0]);
 var remotedir = args[1];
 
 var client = manta.createClient({
-  sign: manta.sshAgentSigner({
+  sign: manta.cliSigner({
     keyId: process.env.MANTA_KEY_ID,
     user: process.env.MANTA_USER
   }),
