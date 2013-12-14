@@ -20,32 +20,38 @@ a manta directory that you would like the files to by synced to.
 All remote directories will be lazily created for you if they do not exist,
 relying on the latest `manta` node module for this behavior.
 
-`manta-sync` has slightly different usage than the standard node manta
-tools, it requires `MANTA_USER`, `MANTA_URL` and `MANTA_KEY_ID` be set, and that
-`ssh-agent` authentication be used.
-
-**NOTE:** This is subject to change... Eventually I would like this script
-to follow the same usage patterns as the command line tools found in `node-manta`.
-
-    usage: manta-sync [options] localdir ~~/remotedir
+    usage: manta-sync.js [OPTIONS] localdir ~~/remotedir
 
     synchronize all files found inside `localdir` to `~~/remotedir`
 
-    examples
+    examples:
       manta-sync ./ ~~/stor/foo
         -- sync all files in your cwd to the dir ~~/stor/foo
       manta-sync --dry-run ./ ~~/stor/foo
         -- same as above, but just HEAD the data, don't PUT
 
-    options
-      -c, --concurrency <num>   max number of parallel HEAD's or PUT's to do, defaults to 30
-      -d, --delete              delete files on the remote end not found locally, defaults to false
-      -h, --help                print this message and exit
-      -j, --just-delete         don't send local files to the remote end, just delete hanging remote files
-      -m, --md5                 use md5 instead of file size (slower, but more accurate)
-      -n, --dry-run             do everything except PUT any files
-      -u, --updates             check for available updates on npm
-      -v, --version             print the version number and exit
+    options:
+        -a ACCOUNT, --account=ACCOUNT       Manta Account (login name). Environment:
+                                            MANTA_USER=ACCOUNT
+        -h, --help                          Print this help and exit
+        -i, --insecure                      Do not validate SSL certificate.
+                                            Environment: MANTA_TLS_INSECURE=1
+        -k FINGERPRINT, --keyId=FINGERPRINT SSH key fingerprint. Environment:
+                                            MANTA_KEY_ID=FINGERPRINT
+        -u URL, --url=URL                   Manta URL. Environment: MANTA_URL=URL
+        -v, --verbose                       verbose mode
+        -p CONCURRENCY, --parallel=CONCURRENCY
+                                            limit concurrent operations
+        -d, --delete                        delete files on the remote end not found
+                                            locally
+        -j, --just-delete                   don't send local files, just delete
+                                            extra remote files
+        -m, --md5                           use md5 instead of file size (slower,
+                                            but more accurate)
+        -n, --dry-run                       don't perform any remote PUT or DELETE
+                                            operations
+        -U, --updates                       check for available updates on npm
+        -V, --version                       print the version number and exit
 
 Example
 -------
@@ -73,18 +79,18 @@ Nothing on the remote end yet, let's sync the files up
     local file list built, 4 files found
 
     ~~/stor/foo/d/e... not found, adding to put list (1/4)
-    ~~/stor/foo/c... not found, adding to put list (2/4)
-    ~~/stor/foo/b... not found, adding to put list (3/4)
-    ~~/stor/foo/a... not found, adding to put list (4/4)
+    ~~/stor/foo/a... not found, adding to put list (2/4)
+    ~~/stor/foo/c... not found, adding to put list (3/4)
+    ~~/stor/foo/b... not found, adding to put list (4/4)
 
-    upload list built, 4 files staged for uploading
+    upload list built, 4 files staged for uploading (took 1016ms)
 
     ~~/stor/foo/a... uploaded (1/4)
     ~~/stor/foo/b... uploaded (2/4)
     ~~/stor/foo/c... uploaded (3/4)
     ~~/stor/foo/d/e... uploaded (4/4)
 
-    4 files put successfully, 0 files failed to put
+    4 files (0 bytes) put successfully, 0 files failed to put (took 474ms)
 
     done
 
@@ -106,12 +112,12 @@ Now that we are synced up, let's run it again and see what happens
     building local file list...
     local file list built, 4 files found
 
-    ~~/stor/foo/b... size same as local file, skipping (1/4)
-    ~~/stor/foo/d/e... size same as local file, skipping (2/4)
+    ~~/stor/foo/a... size same as local file, skipping (1/4)
+    ~~/stor/foo/b... size same as local file, skipping (2/4)
     ~~/stor/foo/c... size same as local file, skipping (3/4)
-    ~~/stor/foo/a... size same as local file, skipping (4/4)
+    ~~/stor/foo/d/e... size same as local file, skipping (4/4)
 
-    upload list built, 0 files staged for uploading
+    upload list built, 0 files staged for uploading (took 838ms)
 
 
     done
@@ -131,11 +137,11 @@ So let's modify a file and rerun the sync
     ~~/stor/foo/d/e... size same as local file, skipping (3/4)
     ~~/stor/foo/b... size same as local file, skipping (4/4)
 
-    upload list built, 1 files staged for uploading
+    upload list built, 1 files staged for uploading (took 999ms)
 
     ~~/stor/foo/a... uploaded (1/1)
 
-    1 files put successfully, 0 files failed to put
+    1 files (6 bytes) put successfully, 0 files failed to put (took 152ms)
 
     done
 

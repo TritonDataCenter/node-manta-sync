@@ -10,10 +10,12 @@
     "manta-sync": "./manta-sync.js"
   },
   "dependencies": {
-    "posix-getopt": "~1.0.0",
     "findit": "~1.1.0",
     "latest": "~0.1.2",
     "async": "~0.2.9",
-    "manta": "~1.2.2"
+    "manta": "~1.2.2",
+    "dashdash": "~1.4.0",
+    "restify": "~2.6.1",
+    "bunyan": "~0.22.1"
   }
 }
