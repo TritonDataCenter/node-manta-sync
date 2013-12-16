@@ -61,17 +61,24 @@ function usage(message) {
 var OPTIONS_PARSER = dashdash.createParser({
   options: manta.DEFAULT_CLI_OPTIONS.concat([
     {
-      names: [ 'parallel', 'p' ],
+      names: ['copies', 'c'],
       type: 'positiveInteger',
-      helpArg: 'CONCURRENCY',
-      default: 50,
-      help: 'limit concurrent operations'
+      default: 2,
+      help: 'number of copies to make',
+      helpArg: 'COPIES'
     },
     {
       names: [ 'delete', 'd' ],
       type: 'bool',
       default: false,
       help: 'delete files on the remote end not found locally'
+    },
+    {
+      names: ['header', 'H'],
+      type: 'arrayOfString',
+      default: [],
+      help: 'HTTP headers to include',
+      helpArg: 'HEADER'
     },
     {
       names: [ 'just-delete', 'j' ],
@@ -90,6 +97,13 @@ var OPTIONS_PARSER = dashdash.createParser({
       type: 'bool',
       default: false,
       help: 'don\'t perform any remote PUT or DELETE operations'
+    },
+    {
+      names: [ 'parallel', 'p' ],
+      type: 'positiveInteger',
+      helpArg: 'CONCURRENCY',
+      default: 50,
+      help: 'limit concurrent operations'
     },
     {
       names: [ 'updates', 'U' ],
@@ -113,6 +127,7 @@ try {
   manta.checkBinEnv(opts);
 } catch (e) {
   usage(e.message);
+  return;
 }
 
 manta.cli_logger(opts, LOG);
@@ -130,6 +145,17 @@ if (opts.help) {
   console.log(package.version);
   return;
 }
+
+opts.headers = {};
+opts.header.forEach(function(h) {
+  if (h.indexOf(':') === -1) {
+    usage('header must be in the form of "[header]: value"');
+    return;
+  }
+  var tmp = h.split(':');
+  opts.headers[tmp[0]] = tmp[1].trim();
+});
+delete opts.header;
 
 var args = opts._args;
 
@@ -300,7 +326,13 @@ function putfile(d, cb) {
   });
 
   rs.on('open', function() {
-    client.put(d.mantafile, rs, {size: d.stat.size, mkdirs: true}, function(err) {
+    var _opts = {
+      size: d.stat.size,
+      mkdirs: true,
+      copies: opts.copies,
+      headers: opts.headers
+    };
+    client.put(d.mantafile, rs, _opts, function(err) {
       processed++;
       if (err) {
         var s = util.format('%s... error uploading: %s (%d/%d)',

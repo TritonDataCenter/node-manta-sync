@@ -40,16 +40,18 @@ relying on the latest `manta` node module for this behavior.
                                             MANTA_KEY_ID=FINGERPRINT
         -u URL, --url=URL                   Manta URL. Environment: MANTA_URL=URL
         -v, --verbose                       verbose mode
-        -p CONCURRENCY, --parallel=CONCURRENCY
-                                            limit concurrent operations
+        -c COPIES, --copies=COPIES          number of copies to make
         -d, --delete                        delete files on the remote end not found
                                             locally
+        -H HEADER, --header=HEADER          HTTP headers to include
         -j, --just-delete                   don't send local files, just delete
                                             extra remote files
         -m, --md5                           use md5 instead of file size (slower,
                                             but more accurate)
         -n, --dry-run                       don't perform any remote PUT or DELETE
                                             operations
+        -p CONCURRENCY, --parallel=CONCURRENCY
+                                            limit concurrent operations
         -U, --updates                       check for available updates on npm
         -V, --version                       print the version number and exit
 
