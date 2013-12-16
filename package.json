@@ -7,7 +7,7 @@
   "license": "MIT",
   "preferGlobal": true,
   "bin": {
-    "manta-sync": "./manta-sync.js"
+    "manta-sync": "./manta-sync"
   },
   "dependencies": {
     "findit": "~1.1.0",
