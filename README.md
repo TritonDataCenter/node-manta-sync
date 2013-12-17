@@ -158,7 +158,7 @@ How
 
 ### 1. Find all local files
 
-The node module [findit](https://github.com/substack/node-findit) is used to
+The local module [Finder](/lib/finder.js) is used to
 locate (and `stat(2)`) all local files, to build a list of files that need
 to be synced.
 

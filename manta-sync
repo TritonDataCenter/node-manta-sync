@@ -15,9 +15,10 @@ var util = require('util');
 var async = require('async');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
-var findit = require('findit');
 var manta = require('manta');
 var restify = require('restify');
+
+var Finder = require('./lib/finder');
 
 var package = require('./package.json');
 
@@ -169,7 +170,7 @@ var client = manta.createBinClient(opts);
 var localdir = path.resolve(args[0]);
 var remotedir = args[1];
 
-var finder = findit(localdir);
+var finder = new Finder(localdir);
 
 // 1. Find all local files
 if (opts.dry_run)

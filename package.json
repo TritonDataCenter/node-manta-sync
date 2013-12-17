@@ -10,7 +10,6 @@
     "manta-sync": "./manta-sync"
   },
   "dependencies": {
-    "findit": "~1.1.0",
     "latest": "~0.1.2",
     "async": "~0.2.9",
     "manta": "~1.2.2",
