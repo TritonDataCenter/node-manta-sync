@@ -1,6 +1,6 @@
 {
   "name": "manta-sync",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Rsync style command for Joyent's Manta",
   "author": "Dave Eddy <dave@daveeddy.com> (http://www.daveeddy.com)",
   "repository": "git://github.com/bahamas10/node-manta-sync.git",
