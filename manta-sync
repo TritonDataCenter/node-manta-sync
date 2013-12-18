@@ -17,6 +17,7 @@ var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var manta = require('manta');
 var restify = require('restify');
+var strsplit = require('strsplit');
 
 var Finder = require('./lib/finder');
 
@@ -153,7 +154,7 @@ opts.header.forEach(function(h) {
     usage('header must be in the form of "[header]: value"');
     return;
   }
-  var tmp = h.split(':');
+  var tmp = strsplit(h, ':', 2);
   opts.headers[tmp[0]] = tmp[1].trim();
 });
 delete opts.header;
