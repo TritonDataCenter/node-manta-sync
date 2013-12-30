@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "latest": "~0.1.2",
-    "async": "~0.2.9",
     "manta": "~1.2.2",
     "dashdash": "~1.4.0",
     "restify": "~2.6.1",
     "bunyan": "~0.22.1",
-    "strsplit": "~1.0.0"
+    "strsplit": "~1.0.0",
+    "vasync": "~1.4.1"
   }
 }
