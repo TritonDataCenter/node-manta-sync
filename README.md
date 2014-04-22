@@ -20,7 +20,7 @@ a manta directory that you would like the files to by synced to.
 All remote directories will be lazily created for you if they do not exist,
 relying on the latest `manta` node module for this behavior.
 
-    usage: manta-sync.js [OPTIONS] localdir ~~/remotedir
+    usage: manta-sync [OPTIONS] localdir ~~/remotedir
 
     synchronize all files found inside `localdir` to `~~/remotedir`
 
@@ -43,6 +43,8 @@ relying on the latest `manta` node module for this behavior.
         -c COPIES, --copies=COPIES          number of copies to make
         -d, --delete                        delete files on the remote end not found
                                             locally
+        -x ARG, --exclude=ARG               a pattern to ignore when searching the
+                                            local filesystem
         -H HEADER, --header=HEADER          HTTP headers to include
         -j, --just-delete                   don't send local files, just delete
                                             extra remote files
@@ -162,6 +164,10 @@ The local module [Finder](/lib/finder.js) is used to
 locate (and `stat(2)`) all local files, to build a list of files that need
 to be synced.
 
+If `-x` or `--exclude` arguments are supplied, they will be used in this step
+to filter out the local files found.  For instance, `--exclude ./.git/` will
+cause `manta-sync` to skip all files beginning with `.git/`.
+
 ### 2. Process each local file, figure out if we need to put a new version into Manta
 
 For each local file found, a corresponding remote manta filename is constructed, and
@@ -190,6 +196,9 @@ are still made.
 If `--delete` is supplied, a walk of the remote file tree is done and compared
 against the list of local files from step 1.  Every file found on the remote
 end that is not referenced locally is deleted.
+
+Any files skipped (by `--exclude`) in the first step will not be deleted
+from the remote end if they are found.
 
 ### 5. Print statistics, clean up
 

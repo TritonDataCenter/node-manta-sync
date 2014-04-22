@@ -20,6 +20,7 @@ var restify = require('restify');
 var strsplit = require('strsplit');
 
 var Finder = require('./lib/finder');
+var Glob = require('./lib/glob');
 
 var package = require('./package.json');
 
@@ -42,6 +43,12 @@ function nexttick(cb) {
       cb.apply(self, args);
     });
   };
+}
+
+var verbose = false;
+function debug() {
+  if (verbose)
+    console.log.apply(console, arguments);
 }
 
 // print usage with an optional error message and exit
@@ -74,6 +81,12 @@ var OPTIONS_PARSER = dashdash.createParser({
       type: 'bool',
       default: false,
       help: 'delete files on the remote end not found locally'
+    },
+    {
+      names: [ 'exclude', 'x' ],
+      type: 'arrayOfString',
+      default: [],
+      help: 'a pattern to ignore when searching the local filesystem'
     },
     {
       names: ['header', 'H'],
@@ -123,6 +136,7 @@ var OPTIONS_PARSER = dashdash.createParser({
 });
 
 
+// read command line arguments
 var opts;
 try {
   opts = OPTIONS_PARSER.parse(process.argv);
@@ -132,8 +146,21 @@ try {
   return;
 }
 
+// massage verbosity: we decrement the verbosity by one
+// if it is supplied.  this way, the first `-v` is used
+// to make the debug statements from manta sync show up,
+// and then subsequenty `-v`'s are passed to node-manta.
+if (opts.verbose) {
+  verbose = true;
+  opts.verbose = opts.verbose.slice(1);
+  if (opts.verbose.length === 0)
+    delete opts.verbose;
+}
+
+// initialize the logger
 manta.cli_logger(opts, LOG);
 
+// -h, -U, -v return immediately
 if (opts.help) {
   usage();
   return;
@@ -148,6 +175,7 @@ if (opts.help) {
   return;
 }
 
+// check for custom headers
 opts.headers = {};
 opts.header.forEach(function(h) {
   if (h.indexOf(':') === -1) {
@@ -159,8 +187,14 @@ opts.header.forEach(function(h) {
 });
 delete opts.header;
 
-var args = opts._args;
+// build the globs
+var globs = [];
+opts.exclude.forEach(function(s) {
+  globs.push(new Glob(s));
+});
 
+var args = opts._args;
+// XXX maybe make this more like rsync?
 if (args.length !== 2) {
   usage('[error] must supply exactly 2 operands\n');
   return;
@@ -179,6 +213,7 @@ if (opts.dry_run)
 console.log('building local file list...');
 var localfiles = [];
 finder.on('file', function(file, stat) {
+  // sanity check... probably should be an assertion
   if (file.indexOf(localdir) !== 0)
     return console.error('error processing %s', file);
 
@@ -186,8 +221,8 @@ finder.on('file', function(file, stat) {
    * $ manta-sync ./foo ~~/stor/foo
    * d.file = /home/dave/foo/file.txt (absolute path)
    * d.stat = [Stat object]
-   * d.basefile = file.txt
-   * d.mantafile = ~~/store/foo/file.txt
+   * d.basefile = file.txt (path relative to arg1)
+   * d.mantafile = ~~/stor/foo/file.txt
    */
   var d = {
     file: file,
@@ -195,6 +230,15 @@ finder.on('file', function(file, stat) {
     basefile: file.substr(localdir.length)
   };
   d.mantafile = path.join(remotedir, d.basefile);
+
+  // check if the file should be excluded
+  for (var i in globs) {
+    var glob = globs[i];
+    if (glob.test(d.basefile.substr(1)))
+      return debug('skipping %s because it was excluded by %s',
+          d.basefile, globs[i]);
+  }
+
   localfiles.push(d);
 });
 
