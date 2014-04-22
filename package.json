@@ -9,6 +9,9 @@
   "bin": {
     "manta-sync": "./manta-sync"
   },
+  "scripts": {
+    "test": "for f in lib/*.js; do node \"$f\" || exit 1; done; echo Passed"
+  },
   "dependencies": {
     "latest": "~0.1.2",
     "manta": "~1.2.2",
