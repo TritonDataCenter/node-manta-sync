@@ -197,7 +197,7 @@ If `--delete` is supplied, a walk of the remote file tree is done and compared
 against the list of local files from step 1.  Every file found on the remote
 end that is not referenced locally is deleted.
 
-Any files skipped (by `--exclude`) in the first step will not be deleted
+Any files skipped (by `--exclude`) in the first step **will** be deleted
 from the remote end if they are found.
 
 ### 5. Print statistics, clean up
