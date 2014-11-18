@@ -9,13 +9,13 @@
 
 var crypto = require('crypto');
 var fs = require('fs');
-var path = require('path');
 var util = require('util');
 
 var vasync = require('vasync');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var manta = require('manta');
+var path = require('path-platform');
 var restify = require('restify');
 var strsplit = require('strsplit');
 
@@ -203,7 +203,7 @@ if (args.length !== 2) {
 var client = manta.createBinClient(opts);
 
 var localdir = path.resolve(args[0]);
-var remotedir = args[1];
+var remotedir = client.path(args[1], true);
 
 var finder = new Finder(localdir);
 
@@ -222,14 +222,14 @@ finder.on('file', function(file, stat) {
    * d.file = /home/dave/foo/file.txt (absolute path)
    * d.stat = [Stat object]
    * d.basefile = file.txt (path relative to arg1)
-   * d.mantafile = ~~/stor/foo/file.txt
+   * d.mantafile = /bahamas10/stor/foo/file.txt
    */
   var d = {
     file: file,
     stat: stat,
     basefile: file.substr(localdir.length)
   };
-  d.mantafile = path.join(remotedir, d.basefile);
+  d.mantafile = path.posix.join(remotedir, d.basefile);
 
   // check if the file should be excluded
   for (var i in globs) {
@@ -426,7 +426,7 @@ function dodelete() {
     res.on('entry', function(d) {
       if (d.type !== 'object')
         return;
-      d.mantafile = path.join(d.parent, d.name).replace('/' + process.env.MANTA_USER, '~~');
+      d.mantafile = path.posix.join(d.parent, d.name);
 
       var results = localfiles.filter(function(localfile) {
         return localfile.mantafile === d.mantafile;
