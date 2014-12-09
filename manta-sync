@@ -227,7 +227,7 @@ finder.on('file', function(file, stat) {
   var d = {
     file: file,
     stat: stat,
-    basefile: file.substr(localdir.length)
+    basefile: path.splitPath(file)[2]
   };
   d.mantafile = path.posix.join(remotedir, d.basefile);
 
