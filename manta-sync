@@ -212,7 +212,8 @@ if (opts.dry_run)
   console.log('== dryrun ==');
 console.log('building local file list...');
 var localfiles = [];
-var leadingslashre = new RegExp('^' + path.sep);
+// XXX WTF windows? what is this trash
+var leadingslashre = new RegExp('^' + (path.sep === '\\' ? (path.sep + path.sep) : path.sep));
 finder.on('file', function(file, stat) {
   // sanity check... probably should be an assertion
   if (file.indexOf(localdir) !== 0)
