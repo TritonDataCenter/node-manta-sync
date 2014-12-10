@@ -212,6 +212,8 @@ if (opts.dry_run)
   console.log('== dryrun ==');
 console.log('building local file list...');
 var localfiles = [];
+// XXX WTF windows? what is this trash
+var sepre = new RegExp(path.sep === '\\' ? (path.sep + path.sep) : path.sep, 'g');
 finder.on('file', function(file, stat) {
   // sanity check... probably should be an assertion
   if (file.indexOf(localdir) !== 0)
@@ -227,7 +229,7 @@ finder.on('file', function(file, stat) {
   var d = {
     file: file,
     stat: stat,
-    basefile: file.substr(localdir.length)
+    basefile: file.substr(localdir.length).replace(sepre, path.posix.sep)
   };
   d.mantafile = path.posix.join(remotedir, d.basefile);
 
