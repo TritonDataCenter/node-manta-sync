@@ -16,7 +16,7 @@
     "bunyan": "~0.22.1",
     "dashdash": "~1.4.0",
     "latest": "~0.1.2",
-    "manta": "~1.4.5",
+    "manta": "~1.4.6",
     "path-platform": "0.0.1",
     "restify": "~2.6.1",
     "strsplit": "~1.0.0",
