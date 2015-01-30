@@ -290,7 +290,7 @@ function processfile(obj, cb) {
     if (err) {
       processed++;
       if (err.code === 'NotFoundError' || err.code === 'ENOENT') {
-        console.log('%s... not found, adding to put list (%d/%d)',
+        console.log('%s... not found, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
         filestoput.push(obj);
       } else {
@@ -320,7 +320,7 @@ function processfile(obj, cb) {
           console.log('%s... md5 same as source file, skipping (%d/%d)',
             dfile.path, processed, sourcefiles.length);
         } else {
-          console.log('%s... md5 is different, adding to put list (%d/%d)',
+          console.log('%s... md5 is different, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
           filestoput.push(obj);
         }
@@ -330,7 +330,7 @@ function processfile(obj, cb) {
           console.log('%s... size same as source file, skipping (%d/%d)',
               dfile.path, processed, sourcefiles.length);
         } else {
-          console.log('%s... size is different, adding to put list (%d/%d)',
+          console.log('%s... size is different, adding to sync list (%d/%d)',
               dfile.path, processed, sourcefiles.length);
           filestoput.push(obj);
         }
