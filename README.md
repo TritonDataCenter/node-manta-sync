@@ -20,6 +20,13 @@ a manta directory that you would like the files to by synced to.
 All remote directories will be lazily created for you if they do not exist,
 relying on the latest `manta` node module for this behavior.
 
+If you supply `-r`, `manta-sync` will work in reverse, pulling files from
+manta onto your local filesystem.
+
+    manta-sync -r ~~/stor/foo ./foo
+
+Usage
+
     usage: manta-sync [OPTIONS] localdir ~~/remotedir
 
     synchronize all files found inside `localdir` to `~~/remotedir`
@@ -29,10 +36,17 @@ relying on the latest `manta` node module for this behavior.
         -- sync all files in your cwd to the dir ~~/stor/foo
       manta-sync --dry-run ./ ~~/stor/foo
         -- same as above, but just HEAD the data, don't PUT
+      manta-sync ~~/stor/foo ./bar
+        -- sync all files from manta in ~~/stor/foo to the local dir ./bar
 
     options:
         -a ACCOUNT, --account=ACCOUNT       Manta Account (login name). Environment:
                                             MANTA_USER=ACCOUNT
+        --user=USER, --subuser=USER         Manta User (login name). Environment:
+                                            MANTA_SUBUSER=USER
+        --role=ROLE,ROLE,...                Assume a role. Use multiple times or
+                                            once with a list. Environment:
+                                            MANTA_ROLE=ROLE,ROLE,...
         -h, --help                          Print this help and exit
         -i, --insecure                      Do not validate SSL certificate.
                                             Environment: MANTA_TLS_INSECURE=1
@@ -54,6 +68,7 @@ relying on the latest `manta` node module for this behavior.
                                             operations
         -p CONCURRENCY, --parallel=CONCURRENCY
                                             limit concurrent operations
+        -r, --reverse                       manta to local sync
         -U, --updates                       check for available updates on npm
         -V, --version                       print the version number and exit
 
@@ -209,7 +224,6 @@ the output.
 Possible Future Features
 ------------------------
 
-- Remote => Local sync
 - count number of `HEAD` and `PUT` requests done (for billing purposes)
 
 License
