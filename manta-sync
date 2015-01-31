@@ -9,13 +9,15 @@
 
 var util = require('util');
 
-var vasync = require('vasync');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var manta = require('manta');
 var path = require('path-platform');
 var restify = require('restify');
 var strsplit = require('strsplit');
+var vasync = require('vasync');
+var prettyBytes = require('pretty-bytes');
+var humanizeTime = require('humanize-time');
 
 var Glob = require('./lib/glob');
 var MantaFile = require('./lib/mantafile');
@@ -29,6 +31,14 @@ var LOG = bunyan.createLogger({
   stream: process.stderr,
   serializers: restify.bunyan.serializers
 });
+
+// humanize time wrapper
+function prettyTime(t) {
+  var s = util.format('%sms', t % 1000);
+  if (t < 1000)
+    return s;
+  return util.format('%s %s', humanizeTime(t), s);
+}
 
 // XXX https://github.com/bahamas10/node-manta-sync/issues/3
 function nexttick(cb) {
@@ -233,7 +243,7 @@ var sourcefiles = [];
 
 sourcedir.ftw(function(err, ee) {
   if (err) {
-    console.error('failed to walk files in %s', sourcedir.path);
+    console.error('failed to walk files in %s - %s', sourcedir.path, err.code || err.message || err);
     process.exit(1);
   }
   ee.on('file', function(file) {
@@ -342,8 +352,8 @@ function processfile(obj, cb) {
 
 infoqueue.drain = function() {
   processed = 0;
-  console.log('\nsync list built, %d files staged for syncing (took %dms)\n',
-      filestoput.length, (Date.now() - headstarted) || 0);
+  console.log('\nsync list built, %d files staged for syncing (took %s)\n',
+      filestoput.length, prettyTime((Date.now() - headstarted) || 0));
   if (!filestoput.length) {
     if (opts.delete)
       dodelete();
@@ -421,8 +431,8 @@ function putfile(obj, cb) {
 
 putqueue.drain = function() {
   processed = 0;
-  console.log('\n%d files (%d bytes) synced successfully, %d files failed to sync (took %dms)',
-      filesput, bytesput, filesnotput, (Date.now() - putsstarted) || 0);
+  console.log('\n%d files (%s, %d bytes) synced successfully, %d files failed to sync (took %s)',
+      filesput, prettyBytes(bytesput), bytesput, filesnotput, prettyTime((Date.now() - putsstarted) || 0));
   if (opts.delete)
     dodelete();
   else
@@ -491,8 +501,8 @@ function deletefile(dfile, cb) {
 }
 
 deletequeue.drain = function() {
-  console.log('\n%d files deleted successfully, %d files failed to delete (took %dms)',
-      filesdeleted, filesnotdeleted, (Date.now() - deletesstarted) || 0);
+  console.log('\n%d files deleted successfully, %d files failed to delete (took %s)',
+      filesdeleted, filesnotdeleted, prettyTime((Date.now() - deletesstarted) || 0));
   done();
 };
 
