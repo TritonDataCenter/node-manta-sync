@@ -40,7 +40,7 @@ function prettyTime(t) {
   return util.format('%s %s', humanizeTime(t), s);
 }
 
-// XXX https://github.com/bahamas10/node-manta-sync/issues/3
+// https://github.com/bahamas10/node-manta-sync/issues/3
 function nexttick(cb) {
   return function _nexttick() {
     var self = this;
@@ -66,16 +66,13 @@ function usage(message) {
     'examples',
     '',
     '  manta-sync ./ ~~/stor/foo',
-    '',
-    '    -- sync all files in your cwd to the dir ~~/stor/foo',
+    '    - sync all files in your cwd to the dir ~~/stor/foo',
     '',
     '  manta-sync --dry-run ./ ~~/stor/foo',
-    '',
-    '    -- same as above, but just HEAD the data, don\'t PUT',
+    '    - same as above, but just HEAD the data, don\'t PUT',
     '',
     '  manta-sync -r ~~/stor/foo ./bar',
-    '',
-    '    -- sync all files from manta in ~~/stor/foo to the local dir ./bar',
+    '    - sync all files from manta in ~~/stor/foo to the local dir ./bar',
     '',
   ].join('\n'));
 }
@@ -437,8 +434,8 @@ function putfile(obj, cb) {
 
 putqueue.drain = function() {
   processed = 0;
-  console.log('\n%d files (%s, %d bytes) synced successfully, %d files failed to sync (took %s)',
-      filesput, prettyBytes(bytesput), bytesput, filesnotput, prettyTime((Date.now() - putsstarted) || 0));
+  console.log('\n%d files (%s) synced successfully, %d files failed to sync (took %s)',
+      filesput, prettyBytes(bytesput), filesnotput, prettyTime((Date.now() - putsstarted) || 0));
   if (opts.delete)
     dodelete();
   else

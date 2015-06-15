@@ -34,16 +34,13 @@ Usage
     examples
 
       manta-sync ./ ~~/stor/foo
-
-        -- sync all files in your cwd to the dir ~~/stor/foo
+        - sync all files in your cwd to the dir ~~/stor/foo
 
       manta-sync --dry-run ./ ~~/stor/foo
-
-        -- same as above, but just HEAD the data, don't PUT
+        - same as above, but just HEAD the data, don't PUT
 
       manta-sync -r ~~/stor/foo ./bar
-
-        -- sync all files from manta in ~~/stor/foo to the local dir ./bar
+        - sync all files from manta in ~~/stor/foo to the local dir ./bar
 
     options:
         -a ACCOUNT, --account=ACCOUNT       Manta Account (login name). Environment:
