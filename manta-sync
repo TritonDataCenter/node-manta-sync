@@ -113,6 +113,12 @@ var OPTIONS_PARSER = dashdash.createParser({
       help: 'don\'t send local files, just delete extra remote files'
     },
     {
+      names: [ 'ignore-links', 'l' ],
+      type: 'bool',
+      default: false,
+      help: 'ignore symlinks'
+    },
+    {
       names: [ 'md5', 'm' ],
       type: 'bool',
       default: false,
@@ -244,7 +250,10 @@ var sourcefiles = [];
 // XXX WTF windows? what is this trash
 //var sepre = new RegExp(path.sep === '\\' ? (path.sep + path.sep) : path.sep, 'g');
 
-sourcedir.ftw(function(err, ee) {
+var ftwOpts = {
+    ignoreSymlinks: opts.ignore_links
+};
+sourcedir.ftw(ftwOpts, function(err, ee) {
   if (err) {
     console.error('failed to walk files in %s - %s', sourcedir.path, err.code || err.message || err);
     process.exit(1);
