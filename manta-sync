@@ -11,13 +11,14 @@ var util = require('util');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
+var humanizeTime = require('humanize-time');
 var manta = require('manta');
+var once = require('once');
 var path = require('path-platform');
+var prettyBytes = require('pretty-bytes');
 var restify = require('restify');
 var strsplit = require('strsplit');
 var vasync = require('vasync');
-var prettyBytes = require('pretty-bytes');
-var humanizeTime = require('humanize-time');
 
 var Glob = require('./lib/glob');
 var MantaFile = require('./lib/mantafile');
@@ -294,7 +295,7 @@ var errors = [];
 var headstarted;
 var infoqueue = vasync.queue(processfile, opts.parallel);
 function processfile(obj, cb) {
-  cb = nexttick(cb);
+  cb = once(nexttick(cb));
   var sfile = obj.sfile;
   var dfile = obj.dfile;
 
@@ -377,7 +378,7 @@ var filesput = 0;
 var filesnotput = 0;
 var bytesput = 0;
 function putfile(obj, cb) {
-  cb = nexttick(cb);
+  cb = once(nexttick(cb));
   var sfile = obj.sfile;
   var dfile = obj.dfile;
 
@@ -481,7 +482,7 @@ function dodelete() {
 }
 
 function deletefile(dfile, cb) {
-  cb = nexttick(cb);
+  cb = once(nexttick(cb));
   if (opts.dry_run) {
     console.log('%s... deleted (dryrun)', dfile.path);
     cb();
