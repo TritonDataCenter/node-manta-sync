@@ -52,15 +52,26 @@ function nexttick(cb) {
   };
 }
 
-var verbose = false;
-function debug() {
-  if (verbose)
-    console.log.apply(console, arguments);
+var verbosity = 0;
+/**
+ * debugging/log function
+ *
+ * level is the log level number which will determine if the message is shown
+ * for example:
+ *  0: always shown
+ *  1: shown if `-v` or more are supplied
+ *  2: shown if `-vv` or more are supplied
+ */
+function log(level /*, args */) {
+  var args = Array.prototype.slice.call(arguments).slice(1);
+  if (level <= verbosity)
+    console.log.apply(console, args);
 }
 
 // print usage with an optional error message and exit
 function usage(message) {
-  manta.cli_usage(OPTIONS_PARSER, message, 'localdir ~~/remotedir\n' + [
+  manta.cli_usage(OPTIONS_PARSER, message, [
+    'localdir ~~/remotedir',
     '',
     'synchronize all files found inside `localdir` to `~~/remotedir`',
     '',
@@ -133,6 +144,12 @@ var OPTIONS_PARSER = dashdash.createParser({
       help: 'limit concurrent operations'
     },
     {
+      names: [ 'quiet', 'q' ],
+      type: 'bool',
+      default: false,
+      help: 'suppress all output'
+    },
+    {
       names: [ 'reverse', 'r' ],
       type: 'bool',
       default: false,
@@ -163,13 +180,16 @@ try {
   return;
 }
 
-// massage verbosity: we decrement the verbosity by one
-// if it is supplied.  this way, the first `-v` is used
-// to make the debug statements from manta sync show up,
-// and then subsequenty `-v`'s are passed to node-manta.
-if (opts.verbose) {
-  verbose = true;
-  opts.verbose = opts.verbose.slice(1);
+// we hijack `-v` to better suit our personal verbosity needs
+// before the rest are passed to node-manta
+if (opts.quiet) {
+  verbosity = -1;
+  delete opts.verbose;
+} else if (opts.verbose) {
+  for (var i = 0; i < 2 && opts.verbose.length > 0; i++) {
+    verbosity++;
+    opts.verbose = opts.verbose.slice(1);
+  }
   if (opts.verbose.length === 0)
     delete opts.verbose;
 }
@@ -232,14 +252,14 @@ if (opts.reverse) {
   destdir = new MantaFile(client.path(destdir, true), client);
 }
 
-debug('sourcedir: %s', sourcedir);
-debug('destdir: %s', destdir);
+log(2, 'sourcedir: %s', sourcedir);
+log(2, 'destdir: %s', destdir);
 
 if (opts.dry_run)
-  console.log('== dryrun ==');
+  log(0, '== dryrun ==');
 
 // 1. Find all source files
-console.log('building source file list...');
+log(0, 'building source file list...');
 var sourcefiles = [];
 
 // XXX WTF windows? what is this trash
@@ -256,7 +276,7 @@ sourcedir.ftw(function(err, ee) {
     for (var i in globs) {
       var glob = globs[i];
       if (glob.test(relativefile.substr(1)))
-        return debug('skipping %s because it was excluded by %s',
+        return log(2, 'skipping %s because it was excluded by %s',
             relativefile, globs[i]);
     }
 
@@ -277,7 +297,7 @@ sourcedir.ftw(function(err, ee) {
   });
 
   ee.on('end', function() {
-    console.log('source file list built, %d files found\n', sourcefiles.length);
+    log(0, 'source file list built, %d files found', sourcefiles.length);
     if (!sourcefiles.length)
       return done();
     else if (opts.just_delete)
@@ -304,7 +324,7 @@ function processfile(obj, cb) {
     if (err) {
       processed++;
       if (err.code === 'NotFoundError' || err.code === 'ENOENT') {
-        console.log('%s... not found, adding to sync list (%d/%d)',
+        log(0, '%s... not found, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
         filestoput.push(obj);
       } else {
@@ -332,20 +352,20 @@ function processfile(obj, cb) {
       if (opts.md5) {
         // check md5
         if (dinfo.md5 === sinfo.md5) {
-          console.log('%s... md5 same as source file, skipping (%d/%d)',
+          log(1, '%s... md5 same as source file, skipping (%d/%d)',
             dfile.path, processed, sourcefiles.length);
         } else {
-          console.log('%s... md5 is different, adding to sync list (%d/%d)',
+          log(0, '%s... md5 is different, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
           filestoput.push(obj);
         }
       } else {
         // check size
         if (dinfo.size === sinfo.size) {
-          console.log('%s... size same as source file, skipping (%d/%d)',
+          log(1, '%s... size same as source file, skipping (%d/%d)',
               dfile.path, processed, sourcefiles.length);
         } else {
-          console.log('%s... size is different, adding to sync list (%d/%d)',
+          log(0, '%s... size is different, adding to sync list (%d/%d)',
               dfile.path, processed, sourcefiles.length);
           filestoput.push(obj);
         }
@@ -357,7 +377,7 @@ function processfile(obj, cb) {
 
 infoqueue.drain = function() {
   processed = 0;
-  console.log('\nsync list built, %d files staged for syncing (took %s)\n',
+  log(0, '\nsync list built, %d files staged for syncing (took %s)',
       filestoput.length, prettyTime((Date.now() - headstarted) || 0));
   if (!filestoput.length) {
     if (opts.delete)
@@ -383,7 +403,7 @@ function putfile(obj, cb) {
   var dfile = obj.dfile;
 
   if (opts.dry_run) {
-    console.log('%s... synced (dryrun)', dfile.path);
+    log(0, '%s... synced (dryrun)', dfile.path);
     cb();
     return;
   }
@@ -425,7 +445,7 @@ function putfile(obj, cb) {
         errors.push(s);
         filesnotput++;
       } else {
-        console.log('%s... synced (%d/%d)',
+        log(0, '%s... synced (%d/%d)',
           dfile.path, processed, filestoput.length);
         filesput++;
         bytesput += sinfo.size;
@@ -437,7 +457,7 @@ function putfile(obj, cb) {
 
 putqueue.drain = function() {
   processed = 0;
-  console.log('\n%d files (%s) synced successfully, %d files failed to sync (took %s)',
+  log(0, '\n%d files (%s) synced successfully, %d files failed to sync (took %s)',
       filesput, prettyBytes(bytesput), filesnotput, prettyTime((Date.now() - putsstarted) || 0));
   if (opts.delete)
     dodelete();
@@ -452,7 +472,7 @@ var filesnotdeleted = 0;
 var remotefilestodelete = [];
 var deletesstarted;
 function dodelete() {
-  console.log('\nbuilding destination file list for deletion...');
+  log(0, '\nbuilding destination file list for deletion...');
   destdir.ftw({parallel: opts.parallel}, function(err, ee) {
     if (err) {
       var e = util.format('error listing destination files: %s', err.code || err.message);
@@ -472,7 +492,7 @@ function dodelete() {
     });
 
     ee.on('end', function() {
-      console.log('destination file list built, %d files found\n', remotefilestodelete.length);
+     log(0, 'destination file list built, %d files found', remotefilestodelete.length);
       if (!remotefilestodelete.length)
         return done();
       deletequeue.push(remotefilestodelete, function() {});
@@ -484,7 +504,7 @@ function dodelete() {
 function deletefile(dfile, cb) {
   cb = once(nexttick(cb));
   if (opts.dry_run) {
-    console.log('%s... deleted (dryrun)', dfile.path);
+    log(0, '%s... deleted (dryrun)', dfile.path);
     cb();
     return;
   }
@@ -498,7 +518,7 @@ function deletefile(dfile, cb) {
       errors.push(s);
       filesnotdeleted++;
     } else {
-      console.log('%s... deleted (%d/%d)',
+      log(0, '%s... deleted (%d/%d)',
         dfile.path, processed, remotefilestodelete.length);
       filesdeleted++;
     }
@@ -507,7 +527,7 @@ function deletefile(dfile, cb) {
 }
 
 deletequeue.drain = function() {
-  console.log('\n%d files deleted successfully, %d files failed to delete (took %s)',
+  log(0, '\n%d files deleted successfully, %d files failed to delete (took %s)',
       filesdeleted, filesnotdeleted, prettyTime((Date.now() - deletesstarted) || 0));
   done();
 };
@@ -522,7 +542,7 @@ function done() {
       console.error(error);
     });
   }
-  console.log('\ndone');
+  log(0, 'done');
   client.close();
   process.exit(ret);
 }
@@ -530,21 +550,21 @@ function done() {
 // Signals
 process.on('SIGUSR2', function() {
   if (infoqueue.length) {
-    console.log('%d info tasks waiting to complete', infoqueue.tasks.length);
+    log(0, '%d info tasks waiting to complete', infoqueue.tasks.length);
     infoqueue.tasks.forEach(function(task) {
-      console.log(task.data.mantafile);
+      log(0, task.data.mantafile);
     });
   }
   if (putqueue.length) {
-    console.log('%d sync tasks waiting to complete', putqueue.tasks.length);
+    log(0, '%d sync tasks waiting to complete', putqueue.tasks.length);
     putqueue.tasks.forEach(function(task) {
-      console.log(task.data.mantafile);
+      log(0, task.data.mantafile);
     });
   }
   if (deletequeue.length) {
-    console.log('%d delete tasks waiting to complete', deletequeue.tasks.length);
+    log(0, '%d delete tasks waiting to complete', deletequeue.tasks.length);
     deletequeue.tasks.forEach(function(task) {
-      console.log(task.data.mantafile);
+      log(0, task.data.mantafile);
     });
   }
 });
