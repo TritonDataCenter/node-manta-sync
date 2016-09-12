@@ -26,7 +26,9 @@ manta onto your local filesystem.
     manta-sync -r ~~/stor/foo ./foo
 
 Usage
+-----
 
+    $ manta-sync -h
     usage: manta-sync [OPTIONS] localdir ~~/remotedir
 
     synchronize all files found inside `localdir` to `~~/remotedir`
@@ -50,30 +52,31 @@ Usage
         --role=ROLE,ROLE,...                Assume a role. Use multiple times or
                                             once with a list. Environment:
                                             MANTA_ROLE=ROLE,ROLE,...
-        -h, --help                          Print this help and exit
+        -h, --help                          Print this help and exit.
         -i, --insecure                      Do not validate SSL certificate.
                                             Environment: MANTA_TLS_INSECURE=1
         -k FINGERPRINT, --keyId=FINGERPRINT SSH key fingerprint. Environment:
                                             MANTA_KEY_ID=FINGERPRINT
         -u URL, --url=URL                   Manta URL. Environment: MANTA_URL=URL
-        -v, --verbose                       verbose mode
-        -c COPIES, --copies=COPIES          number of copies to make
+        -v, --verbose                       verbose mode.
+        -c COPIES, --copies=COPIES          number of copies to make.
         -d, --delete                        delete files on the remote end not found
-                                            locally
+                                            locally.
         -x ARG, --exclude=ARG               a pattern to ignore when searching the
-                                            local filesystem
-        -H HEADER, --header=HEADER          HTTP headers to include
+                                            local filesystem.
+        -H HEADER, --header=HEADER          HTTP headers to include.
         -j, --just-delete                   don't send local files, just delete
-                                            extra remote files
+                                            extra remote files.
         -m, --md5                           use md5 instead of file size (slower,
-                                            but more accurate)
+                                            but more accurate).
         -n, --dry-run                       don't perform any remote PUT or DELETE
-                                            operations
+                                            operations.
         -p CONCURRENCY, --parallel=CONCURRENCY
-                                            limit concurrent operations
-        -r, --reverse                       manta to local sync
-        -U, --updates                       check for available updates on npm
-        -V, --version                       print the version number and exit
+                                            limit concurrent operations.
+        -q, --quiet                         suppress all output.
+        -r, --reverse                       manta to local sync.
+        -U, --updates                       check for available updates on npm.
+        -V, --version                       print the version number and exit.
 
 Example
 -------
