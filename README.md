@@ -67,6 +67,7 @@ Usage
         -H HEADER, --header=HEADER          HTTP headers to include.
         -j, --just-delete                   don't send local files, just delete
                                             extra remote files.
+        -l, --ignore-links                  ignore symlinks.
         -m, --md5                           use md5 instead of file size (slower,
                                             but more accurate).
         -n, --dry-run                       don't perform any remote PUT or DELETE
