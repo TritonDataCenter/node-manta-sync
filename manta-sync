@@ -16,7 +16,7 @@ var manta = require('manta');
 var once = require('once');
 var path = require('path-platform');
 var prettyBytes = require('pretty-bytes');
-var restify = require('restify');
+var restify = require('restify-clients');
 var strsplit = require('strsplit');
 var vasync = require('vasync');
 
