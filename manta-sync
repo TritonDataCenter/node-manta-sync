@@ -89,6 +89,19 @@ function usage(message) {
   ].join('\n'));
 }
 
+// return dest and source file objects
+function makeFiles(relativefile) {
+  var obj = {};
+  if (opts.reverse) {
+    obj.sfile = new MantaFile(path.posix.join(sourcedir.path, relativefile), client);
+    obj.dfile = new LocalFile(path.join(destdir.path, relativefile));
+  } else {
+    obj.sfile = new LocalFile(path.join(sourcedir.path, relativefile));
+    obj.dfile = new MantaFile(path.posix.join(destdir.path, relativefile), client);
+  }
+  return obj;
+}
+
 // parse command line options
 var OPTIONS_PARSER = dashdash.createParser({
   options: manta.DEFAULT_CLI_OPTIONS.concat([
@@ -281,7 +294,7 @@ sourcedir.ftw(ftwOpts, function(err, ee) {
   }
   ee.on('file', function(file) {
     // check if the file should be excluded
-    var relativefile = file.path.substr(sourcedir.path.length);
+    var relativefile = file.substr(sourcedir.path.length);
     for (var i in globs) {
       var glob = globs[i];
       if (glob.test(relativefile.substr(1)))
@@ -289,25 +302,12 @@ sourcedir.ftw(ftwOpts, function(err, ee) {
             relativefile, globs[i]);
     }
 
-    var sfile = file; // source file
-    var dfile; // dest file
-    if (opts.reverse) {
-      // dest file is LocalFile
-      dfile = new LocalFile(path.join(destdir.path, relativefile));
-    } else {
-      // dest file is MantaFile
-      dfile = new MantaFile(path.posix.join(destdir.path, relativefile), client);
-    }
-
-    sourcefiles.push({
-      sfile: sfile,
-      dfile: dfile,
-    });
+    sourcefiles.push(relativefile);
   });
 
   ee.on('end', function() {
     log(0, 'source file list built, %d files found', sourcefiles.length);
-    if (!sourcefiles.length)
+    if (sourcefiles.length === 0)
       return done();
     else if (opts.just_delete)
       return dodelete();
@@ -323,10 +323,12 @@ var filestoput = [];
 var errors = [];
 var headstarted;
 var infoqueue = vasync.queue(processfile, opts.parallel);
-function processfile(obj, cb) {
+function processfile(relativefile, cb) {
   cb = once(nexttick(cb));
-  var sfile = obj.sfile;
+
+  var obj = makeFiles(relativefile);
   var dfile = obj.dfile;
+  var sfile = obj.sfile;
 
   // check to see if the destination is there
   dfile.info({md5: opts.md5}, function(err, dinfo) {
@@ -335,7 +337,7 @@ function processfile(obj, cb) {
       if (err.code === 'NotFoundError' || err.code === 'ENOENT') {
         log(0, '%s... not found, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
-        filestoput.push(obj);
+        filestoput.push(relativefile);
       } else {
         var s = util.format('%s... unknown error: %s (%d/%d)',
             dfile.path, err.code || err.message, processed, sourcefiles.length);
@@ -366,7 +368,7 @@ function processfile(obj, cb) {
         } else {
           log(0, '%s... md5 is different, adding to sync list (%d/%d)',
             dfile.path, processed, sourcefiles.length);
-          filestoput.push(obj);
+          filestoput.push(relativefile);
         }
       } else {
         // check size
@@ -376,7 +378,7 @@ function processfile(obj, cb) {
         } else {
           log(0, '%s... size is different, adding to sync list (%d/%d)',
               dfile.path, processed, sourcefiles.length);
-          filestoput.push(obj);
+          filestoput.push(relativefile);
         }
       }
       cb();
@@ -406,10 +408,12 @@ var putsstarted;
 var filesput = 0;
 var filesnotput = 0;
 var bytesput = 0;
-function putfile(obj, cb) {
+function putfile(relativefile, cb) {
   cb = once(nexttick(cb));
-  var sfile = obj.sfile;
+
+  var obj = makeFiles(relativefile);
   var dfile = obj.dfile;
+  var sfile = obj.sfile;
 
   if (opts.dry_run) {
     log(0, '%s... synced (dryrun)', dfile.path);
@@ -491,13 +495,14 @@ function dodelete() {
       return;
     }
 
-    ee.on('file', function(dfile) {
-      var results = sourcefiles.filter(function(obj) {
-        return dfile.path === obj.dfile.path;
+    ee.on('file', function(file) {
+      var relativefile = file.substr(destdir.path.length);
+      var results = sourcefiles.filter(function(f) {
+        return relativefile === f;
       });
 
       if (!results.length)
-        remotefilestodelete.push(dfile);
+        remotefilestodelete.push(relativefile);
     });
 
     ee.on('end', function() {
@@ -510,8 +515,12 @@ function dodelete() {
   });
 }
 
-function deletefile(dfile, cb) {
+function deletefile(relativefile, cb) {
   cb = once(nexttick(cb));
+
+  var obj = makeFiles(relativefile);
+  var dfile = obj.dfile;
+
   if (opts.dry_run) {
     log(0, '%s... deleted (dryrun)', dfile.path);
     cb();
