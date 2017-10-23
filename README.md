@@ -45,6 +45,11 @@ Usage
         - sync all files from manta in ~~/stor/foo to the local dir ./bar
 
     options:
+        -h, --help                          Print this help and exit.
+        --version                           Print version and exit.
+        -v, --verbose                       Verbose trace logging.
+
+      Manta connection options:
         -a ACCOUNT, --account=ACCOUNT       Manta Account (login name). Environment:
                                             MANTA_USER=ACCOUNT
         --user=USER, --subuser=USER         Manta User (login name). Environment:
@@ -52,13 +57,11 @@ Usage
         --role=ROLE,ROLE,...                Assume a role. Use multiple times or
                                             once with a list. Environment:
                                             MANTA_ROLE=ROLE,ROLE,...
-        -h, --help                          Print this help and exit.
         -i, --insecure                      Do not validate SSL certificate.
                                             Environment: MANTA_TLS_INSECURE=1
-        -k FINGERPRINT, --keyId=FINGERPRINT SSH key fingerprint. Environment:
-                                            MANTA_KEY_ID=FINGERPRINT
+        -k FP, --keyId=FP                   SSH key fingerprint. Environment:
+                                            MANTA_KEY_ID=FP
         -u URL, --url=URL                   Manta URL. Environment: MANTA_URL=URL
-        -v, --verbose                       verbose mode.
         -c COPIES, --copies=COPIES          number of copies to make.
         -d, --delete                        delete files on the remote end not found
                                             locally.
@@ -77,7 +80,6 @@ Usage
         -q, --quiet                         suppress all output.
         -r, --reverse                       manta to local sync.
         -U, --updates                       check for available updates on npm.
-        -V, --version                       print the version number and exit.
 
 Example
 -------
