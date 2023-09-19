@@ -1,12 +1,19 @@
 manta-sync
 ==========
 
-Rsync style command for [Joyent's Manta](http://www.joyent.com/products/manta)
+Rsync style command for [Triton Manta](http://www.tritondatacenter.com/products/manta)
+
+`manta-sync` is now part of `node-manta`. This package is now just a wrapper
+for `msync`.
 
 Installation
 ------------
 
     npm install -g manta-sync
+
+or to get `msync` instead:
+
+    npm install -g manta
 
 Usage
 -----
